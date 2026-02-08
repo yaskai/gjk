@@ -27,16 +27,30 @@ int main() {
 	Vector2 player_pos = (Vector2) { 700, 300 };
 	Vector2 player_ext = (Vector2) { 100, 100 };
  
-	Hull hull = (Hull) {0};
-	Vector3 points[] = {
-		{   100,  300,   0 },
-		{  1400,  1000,  0 },
-		{  1000,  500,   0 }
+	Hull hull_A = (Hull) {0};
+	Vector3 points_A[] = {
+		{   500,  300,   0 },
+		{  1000,  900,   0 },
+		{  1350,  500,   0 },
+		{  400,   600,   0 },
+		{  550,   900,   0 },
+		{  990,   200,   0 }
 	};
+	size_t numpoints = (sizeof(points_A) / sizeof(points_A[0]));
+	hull_A.point_count = numpoints;
+	memcpy(hull_A.points, points_A, sizeof(Vector3) * numpoints);
+	hull_A.origin = HullOrigin(&hull_A);
 
-	size_t numpoints = (sizeof(points) / sizeof(points[0]));
-	hull.point_count = numpoints;
-	memcpy(hull.points, points, sizeof(Vector3) * numpoints);
+	Hull hull_B = (Hull) {0};
+	Vector3 points_B[] = {
+		{  200, 150,  0 },
+		{  332,  80,  0 },
+		{   64,  32,  0 },
+	};
+	numpoints = (sizeof(points_B) / sizeof(points_B[0]));
+	hull_B.point_count = numpoints;
+	memcpy(hull_B.points, points_B, sizeof(Vector3) * numpoints);
+	hull_B.origin = HullOrigin(&hull_B);
 
 	Vector2 cursor_dir = {0};
 	
@@ -57,20 +71,17 @@ int main() {
 		BeginDrawing();
 		ClearBackground(BLACK);
 
-		for(u16 i = 0; i < hull.point_count; i++) {
-			DrawCircleV(Vec3Flat(hull.points[i]), 8, RAYWHITE);
+		for(u16 i = 0; i < hull_A.point_count; i++) {
+			DrawCircleV(Vec3Flat(hull_A.points[i]), 8, RAYWHITE);
 		}
 
-		DrawCircleV(player_pos, 32, GREEN);
+		for(u16 i = 0; i < hull_B.point_count; i++) {
+			hull_B.points[i] = Vector3Add(hull_B.points[i], vec2Deep(move));
+			hull_B.origin = HullOrigin(&hull_B);
+			DrawCircleV(Vec3Flat(hull_B.points[i]), 8, PINK);
+		}
 
-		DrawLineV(player_pos, Vector2Scale(Vector2Normalize(cursor_dir), 2000), GREEN);
-		Vector3 cursor_end = vec2Deep(Vector2Scale(cursor_dir, 2000));
-
-		int furthest = FurthestPoint(hull.points, hull.point_count, vec2Deep(cursor_dir));
-		if(furthest != -1) 
-			DrawCircleV(Vec3Flat(hull.points[furthest]), 8, RED);
-
-		Vector3 s = Support(hull.points, hull.point_count, vec2Deep(cursor_dir));
+		Vector3 s = Support(&hull_A, &hull_B, (Vector3) {1, 0, 0} );
 		DrawCircleV(Vec3Flat(s), 8, SKYBLUE);
 
 		EndDrawing();

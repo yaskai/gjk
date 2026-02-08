@@ -21,14 +21,16 @@ int FurthestPoint(Vector3 *points, u16 count, Vector3 dir) {
 
 Vector3 Support(Hull *hull_A , Hull *hull_B, Vector3 dir) {
 	int max = FurthestPoint(hull_A->points, hull_A->point_count, dir);
+	if(max < 0) max = 0;
 	int min = FurthestPoint(hull_B->points, hull_B->point_count, Vector3Negate(dir));
+	if(min < 0) min = 0;
+
 
 	return Vector3Subtract(
 		hull_A->points[max], hull_B->points[min]
 	);
 }
 
-// Rough estimate of hull center
 Vector3 HullOrigin(Hull *hull) {
 	float3 min = Vector3ToFloatV(Vector3Scale(Vector3One(),  FLT_MAX));
 	float3 max = Vector3ToFloatV(Vector3Scale(Vector3One(), -FLT_MAX));
@@ -56,9 +58,7 @@ Vector3 HullOrigin(Hull *hull) {
 	};
 }
 
-short DoSimplex(Simplex *simplex, Vector3 *dir) {
-	
+void DoSimplex(Simplex *simplex, Vector3 dir) {
 
-	return 0;
 }
 
