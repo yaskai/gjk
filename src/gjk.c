@@ -3,6 +3,10 @@
 #include "raymath.h"
 #include "gjk.h"
 
+Vector3 TripleProduct(Vector3 a, Vector3 b, Vector3 c) {
+	return(Vector3CrossProduct(Vector3CrossProduct(a, b), c));
+}
+
 int FurthestPoint(Vector3 *points, u16 count, Vector3 dir) {
 	float max_dot = -FLT_MAX;
 	int id = 0;
@@ -29,7 +33,7 @@ Vector3 Support(Hull *hull_A , Hull *hull_B, Vector3 dir) {
 }
 
 // Rough estimate of hull center
-Vector3 HullOrigin(Hull *hull) {
+Vector3 HullCenter(Hull *hull) {
 	float3 min = Vector3ToFloatV(Vector3Scale(Vector3One(),  FLT_MAX));
 	float3 max = Vector3ToFloatV(Vector3Scale(Vector3One(), -FLT_MAX));
 	
@@ -57,8 +61,10 @@ Vector3 HullOrigin(Hull *hull) {
 }
 
 short DoSimplex(Simplex *simplex, Vector3 *dir) {
-	
-
 	return 0;
+}
+
+void GjkIntersect(Hull *hull_A, Hull *hull_B, GjkData *data) {
+
 }
 

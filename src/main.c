@@ -39,7 +39,7 @@ int main() {
 	size_t numpoints = (sizeof(points_A) / sizeof(points_A[0]));
 	hull_A.point_count = numpoints;
 	memcpy(hull_A.points, points_A, sizeof(Vector3) * numpoints);
-	hull_A.origin = HullOrigin(&hull_A);
+	hull_A.origin = HullCenter(&hull_A);
 
 	Hull hull_B = (Hull) {0};
 	Vector3 points_B[] = {
@@ -50,7 +50,7 @@ int main() {
 	numpoints = (sizeof(points_B) / sizeof(points_B[0]));
 	hull_B.point_count = numpoints;
 	memcpy(hull_B.points, points_B, sizeof(Vector3) * numpoints);
-	hull_B.origin = HullOrigin(&hull_B);
+	hull_B.origin = HullCenter(&hull_B);
 
 	Vector2 cursor_dir = {0};
 	
@@ -77,7 +77,7 @@ int main() {
 
 		for(u16 i = 0; i < hull_B.point_count; i++) {
 			hull_B.points[i] = Vector3Add(hull_B.points[i], vec2Deep(move));
-			hull_B.origin = HullOrigin(&hull_B);
+			hull_B.origin = HullCenter(&hull_B);
 			DrawCircleV(Vec3Flat(hull_B.points[i]), 8, PINK);
 		}
 
