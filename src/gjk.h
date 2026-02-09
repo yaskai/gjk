@@ -52,7 +52,7 @@ short TetraCheckFace(Vector3 a,
 					 Vector3 *dir
 					 ); 
 
-#define GJK_MAX_ITERS 32
+#define GJK_MAX_ITERS 128
 typedef struct {
 	Vector3 point;
 	float distance;

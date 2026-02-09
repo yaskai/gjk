@@ -5,7 +5,15 @@
 #include "gjk.h"
 
 Vector3 TripleProduct(Vector3 a, Vector3 b, Vector3 c) {
-	return(Vector3CrossProduct(Vector3CrossProduct(a, b), c));
+	//return(Vector3CrossProduct(Vector3CrossProduct(a, b), c));
+
+	float ac = Vector3DotProduct(a, c);
+	float bc = Vector3DotProduct(b, c);
+
+	return Vector3Subtract(
+		Vector3Scale(b, ac),
+		Vector3Scale(a, bc)
+	);
 }
 
 short FurthestPoint(Vector3 *points, u16 count, Vector3 dir) {
@@ -62,9 +70,17 @@ Vector3 HullCenter(Hull *hull) {
 }
 
 void PushToSimplex(Simplex *simplex, Vector3 point) {
+	/*
 	if(simplex->size < SIMPLEX_TETRA) {
 		simplex->points[simplex->size++] = point;
 	}
+	*/
+
+	for(short i = simplex->size; i > 0; i--) {
+		simplex->points[i] = simplex->points[i-1];
+	}
+	simplex->points[0] = point;
+	simplex->size++;
 }
 
 short DoSimplex(Simplex *simplex, Vector3 *dir) {
@@ -85,8 +101,12 @@ short DoSimplex(Simplex *simplex, Vector3 *dir) {
 
 short SimplexLine(Simplex *simplex, Vector3 *dir) {
 	// A is always most recent point
+	/*
 	Vector3 a = simplex->points[1];	
 	Vector3 b = simplex->points[0];	
+	*/
+	Vector3 a = simplex->points[0];	
+	Vector3 b = simplex->points[1];	
 
 	Vector3 ab = Vector3Subtract(b, a); // A -> B
 	Vector3 ao = Vector3Negate(a); 		// A -> Origin
@@ -102,29 +122,31 @@ short SimplexLine(Simplex *simplex, Vector3 *dir) {
 		*dir = ao;
 	}
 
-	*dir = Vector3Normalize(*dir);
+	if(Vector3LengthSqr(*dir) < 1e-8f) *dir = Vector3CrossProduct(ab, Vector3CrossProduct(ab, ao));
+
+	//*dir = Vector3Normalize(*dir);
 
 	// Line can't contain origin in 3D
 	return 0;
 }
 
 short SimplexTri(Simplex *simplex, Vector3 *dir) {
+	/*
 	Vector3 a = simplex->points[2];
 	Vector3 b = simplex->points[1];
 	Vector3 c = simplex->points[0];
-
-	/*
-	a = Vector3Negate(a);
-	b = Vector3Negate(b);
-	c = Vector3Negate(c);
 	*/
+
+	Vector3 a = simplex->points[0];	
+	Vector3 b = simplex->points[1];	
+	Vector3 c = simplex->points[2];	
 
 	Vector3 ab = Vector3Subtract(b, a);
 	Vector3 ac = Vector3Subtract(c, a);
 	Vector3 bc = Vector3Subtract(c, b);
 
 	Vector3 ao = Vector3Negate(a);
-	Vector3 bo = Vector3Negate(b);
+	//Vector3 bo = Vector3Negate(b);
 
 	// Triangle normal
 	Vector3 abc = Vector3CrossProduct(ab, ac);
@@ -133,10 +155,15 @@ short SimplexTri(Simplex *simplex, Vector3 *dir) {
 	Vector3 ab_perp = Vector3CrossProduct(ab, abc);
 	if(Vector3DotProduct(ab_perp, ao) > 0) {
 		// Origin outside AB edge
+		/*
 		simplex->points[0] = b;
 		simplex->points[1] = a;
+		*/
+		simplex->points[0] = a;
+		simplex->points[1] = b;
 		simplex->size = SIMPLEX_LINE;
 		*dir = TripleProduct(ab, ao, ab);
+		if(Vector3LengthSqr(*dir) < 1e-8f) *dir = Vector3CrossProduct(ab, Vector3CrossProduct(ab, ao));
 		return 0;
 	}
 
@@ -148,11 +175,13 @@ short SimplexTri(Simplex *simplex, Vector3 *dir) {
 		simplex->points[1] = c;
 		simplex->size = SIMPLEX_LINE;
 		*dir = TripleProduct(ac, ao, ac);
-		*dir = Vector3Normalize(*dir);
+		//*dir = Vector3Normalize(*dir);
+		if(Vector3LengthSqr(*dir) < 1e-8f) *dir = Vector3CrossProduct(ac, Vector3CrossProduct(ab, ao));
 		return 0;
 	}
 	
 	// Edge BC
+	Vector3 bo = Vector3Negate(b);
 	Vector3 bc_perp = Vector3CrossProduct(bc, abc);
 	if(Vector3DotProduct(bc_perp, bo) > 0) {
 		// Origin outside AC edge
@@ -160,7 +189,8 @@ short SimplexTri(Simplex *simplex, Vector3 *dir) {
 		simplex->points[1] = b;
 		simplex->size = SIMPLEX_LINE;
 		*dir = TripleProduct(bc, bo, bc);
-		*dir = Vector3Normalize(*dir);
+		//dir = Vector3Normalize(*dir);
+		if(Vector3LengthSqr(*dir) < 1e-8f) *dir = Vector3CrossProduct(bc, Vector3CrossProduct(bc, bo));
 		return 0;
 	}
 
@@ -170,20 +200,34 @@ short SimplexTri(Simplex *simplex, Vector3 *dir) {
 		*dir = abc;
 	} else {
 		// Below, flip winding order
+		/*
 		simplex->points[1] = c;
 		simplex->points[2] = b;	
 		*dir = Vector3Negate(abc);
-		*dir = Vector3Normalize(*dir);
+		*/
+		Vector3 temp = simplex->points[1];
+		simplex->points[1] = simplex->points[2];
+		simplex->points[2] = temp;
+		*dir = Vector3Negate(abc);
 	}
+
+	if(Vector3LengthSqr(*dir) < 1e-8f) *dir = Vector3CrossProduct(ab, Vector3CrossProduct(ab, ao));
 
 	return 0;
 }
 
 short SimplexTetra(Simplex *simplex, Vector3 *dir) {
+	/*
 	Vector3 a = simplex->points[3];
 	Vector3 b = simplex->points[2];
 	Vector3 c = simplex->points[1];
 	Vector3 d = simplex->points[0];
+	*/
+
+	Vector3 a = simplex->points[0];	
+	Vector3 b = simplex->points[1];	
+	Vector3 c = simplex->points[2];	
+	Vector3 d = simplex->points[3];
 
 	// Check each face of tetrahedron
 	if(TetraCheckFace(a, b, c, d, simplex, dir)) return 0;
@@ -204,15 +248,25 @@ short TetraCheckFace(Vector3 a, Vector3 b, Vector3 c, Vector3 op, Simplex *simpl
 	Vector3 norm = Vector3CrossProduct(ab, ac);
 
 	float opp_side = Vector3DotProduct(norm, Vector3Subtract(op, a));
+	if(opp_side > 0) norm = Vector3Negate(norm);			
+
 	float origin_side = Vector3DotProduct(norm, Vector3Negate(a));
+	if(origin_side > 0) {
+		return 0;
+	}
 
 	if(opp_side * origin_side < 0) {
+		/*
 		simplex->points[0] = c; 
 		simplex->points[1] = b; 
 		simplex->points[2] = a; 
+		*/
+		simplex->points[0] = a; 
+		simplex->points[1] = b; 
+		simplex->points[2] = c; 
 		simplex->size = SIMPLEX_TRI;
 		*dir = norm;
-		*dir = Vector3Normalize(*dir);
+		//*dir = Vector3Normalize(*dir);
 		return 1;
 	}
 
@@ -224,7 +278,7 @@ GjkData GjkDataEmpty() {
 		.point = Vector3Zero(),
 		.distance = FLT_MAX,
 		.iterations = 0,
-		.hit = false,
+		.hit = 0,
 	};
 }
 
@@ -236,8 +290,6 @@ void GjkIntersect(Hull *hull_A, Hull *hull_B, GjkData *data) {
 
 	if(Vector3LengthSqr(dir) <= EPSILON) 
 		dir = (Vector3) { 1, 0, 0 };
-	else 
-		dir = Vector3Normalize(dir);
 
 	Simplex simplex = (Simplex) {0};
 
@@ -247,14 +299,14 @@ void GjkIntersect(Hull *hull_A, Hull *hull_B, GjkData *data) {
 
 	// Direction towards origin
 	dir = Vector3Negate(first_point);
-	if(Vector3Length(dir) > EPSILON) dir = Vector3Normalize(dir);
+	//if(Vector3Length(dir) > EPSILON) dir = Vector3Normalize(dir);
 
 	for(short i = 0; i < GJK_MAX_ITERS; i++) {
 		data->iterations = i;
 
 		Vector3 new_point = Support(hull_A, hull_B, dir);
 
-		if(Vector3DotProduct(new_point, dir) <= 0) {
+		if(Vector3DotProduct(new_point, dir) <= 1e-6f) {
 			data->hit = 0;
 			return;
 		}
